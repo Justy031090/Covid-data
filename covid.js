@@ -36,137 +36,15 @@ include at least the following:
 */
 
 
-
-
-//getting the data for each continent API
-let oceania = [];
-let europe= [];
-let asia = [];
-let americas =[];
-let africa = [];
-let covInf = [];
-
-
-function getRegion (array, region) {
-    try{
-    fetch(`https://intense-mesa-62220.herokuapp.com/https://restcountries.herokuapp.com/api/v1/region/${region}`)
-    .then(function(res){
-        return res.json()
-    })
-    .then(function(data){
-        return data.forEach(el=>array.push(el))
-    })
-    return array
-    }
-    catch(e){
-        console.log('oh no', e)
-        }
-}
-
-getRegion(asia, 'asia')
-getRegion(europe, 'europe')
-getRegion(americas, 'americas')
-getRegion(oceania, 'oceania')
-getRegion(africa, 'africa')
-
-
-//getting all the data from Covid API
-async function getCovData ()  {
-    try{
-    let inf = await (await fetch ('https://corona-api.com/countries')).json()
-    return  inf.data.forEach(el=>covInf.push(el))
-    }
-    catch(e){
-        console.log('oh no', e)
-    }
-}
-//get latest data for each continent
-let latestData = []
-let countryName =[]
-async function regionCases(region, strRegion){
-    await getRegion(region, strRegion)
-    await getCovData()
-    for(let i=0; i<covInf.length; i++){
-        for(let j=0; j<region.length; j++){
-            if(region[j].cca2 === covInf[i].code){
-                latestData.push(covInf[i].latest_data);
-                countryName.push(region[j].name.common);
-            }
-        } 
-    } return countryName, latestData
-}
-
-setTimeout(()=>{
-    regionCases(africa, 'africa')
-}, 500)
-
-//counting all cases per country & per continent
-let deaths= [];
-let totalDeaths = 0;
-(function countDeaths (){
-setTimeout(()=>{
-    for (let i=0; i<latestData.length; i++){
-        deaths.push(latestData[i].deaths)
-        totalDeaths += latestData[i].deaths
-        } return totalDeaths, deaths
-}, 1000)
-})()
-let confirmed= [];
-let totalConfirmed = 0;
-(function countConfirmed (){
-setTimeout(()=>{
-    for (let i=0; i<latestData.length; i++){
-        confirmed.push(latestData[i].confirmed)
-        totalConfirmed += latestData[i].confirmed
-        } return totalConfirmed, confirmed
-}, 1000)
-})()
-let recovered= [];
-let totalRecovered = 0;
-(function countRecovered  (){
-setTimeout(()=>{
-    for (let i=0; i<latestData.length; i++){
-        recovered.push(latestData[i].recovered)
-        totalRecovered += latestData[i].recovered
-        } return totalRecovered, recovered
-}, 1000)
-})()
-let critical= [];
-let totalCritical = 0;
-(function countCritical  (){
-setTimeout(()=>{
-    for (let i=0; i<latestData.length; i++){
-        critical.push(latestData[i].critical)
-        totalCritical += latestData[i].critical
-        } return totalCritical, critical
-}, 1000)
-})()
-
-setTimeout(()=>{
-console.log(deaths)
-console.log(totalDeaths)
-console.log(critical)
-console.log(totalCritical)
-console.log(recovered)
-console.log(totalRecovered)
-console.log(confirmed)
-console.log(totalConfirmed)
-}, 1000)
-
-
-// getting started with html
-let canvas = document.querySelector('canvas');
-setTimeout(()=>{
-const myChart = new Chart(canvas, {
-    type: 'pie',
-    data: {
-        labels: countryName,
+//setting the initial chart
+let initialChartLabels = ['Oceania','Europe','Asia','Americas','Africa',];
+const data =  {
+        labels: '',
         datasets: [{
-            label: 'Deaths',
-            data: deaths,
+            label: '',
+            data: '',
             backgroundColor: [
                 'rgb(218, 112, 214)',
-                'orchid',
                 'pink',
                 'orange',
                 'yellow',
@@ -176,8 +54,10 @@ const myChart = new Chart(canvas, {
             ],
             borderWidth: 1
         }]
-    },
-
+}
+const config = {
+    type: 'bar',
+    data,    
     options: {
         scales: {
             y: {
@@ -185,13 +65,96 @@ const myChart = new Chart(canvas, {
             }
         },
         scales: {
-            x: {
-                ticks:{
-                    autoSkip: false
-                }
+        x: {
+            ticks:{
+                autoSkip: false
             }
         }
-        
     }
-});
-}, 1500)
+    }
+}
+let myChart = new Chart(document.querySelector('canvas'), 
+config)
+
+function render (){
+        myChart = new Chart (
+        document.querySelector('canvas'),
+        config) 
+}
+function destroy (){
+    myChart.destroy()
+}
+//getting the data for each continent API
+let oceania = [],  europe= [], asia = [], americas =[], africa = [], covInf = []
+
+
+const getRegion = async function  (array, region) {
+    let data = await( await fetch(`https://intense-mesa-62220.herokuapp.com/https://restcountries.herokuapp.com/api/v1/region/${region}`)).json()
+        return data.forEach(el=>array.push(el))
+}
+
+//getting all the data from Covid API
+const getCovData = async function  ()  {
+    let inf = await (await fetch ('https://corona-api.com/countries')).json()
+    return  inf.data.forEach(el=>covInf.push(el))
+}
+//get latest data for each continent
+let deaths= [];
+let recovered= [];
+let critical= [];
+let confirmed= [];
+let countryName =[]
+async function regionCases(region, strRegion){
+    funcOne = await getRegion(region, strRegion)
+    funcTwo = await getCovData()
+    for(let i=0; i<covInf.length; i++){
+        for(let j=0; j<region.length; j++){
+            if(region[j].cca2 === covInf[i].code){
+                confirmed.push(covInf[i].latest_data.confirmed);
+                critical.push(covInf[i].latest_data.critical);
+                recovered.push(covInf[i].latest_data.recovered);
+                deaths.push(covInf[i].latest_data.deaths);
+                countryName.push(region[j].name.common);
+            }
+        } 
+    }
+}
+async function activate (region, regionstr, dataArr){
+    destroy()
+    render()
+    await regionCases(region, regionstr)
+    let countryLabel = countryName
+    let confirmedData = dataArr
+    myChart.data.labels = countryLabel;
+    myChart.data.datasets[0].data = confirmedData
+    myChart.data.datasets[0].label = regionstr
+    myChart.update()
+    
+}
+// adding buttons 
+let asiaBtn = document.querySelector('.asia-btn')
+let africaBtn = document.querySelector('.africa-btn')
+let americasBtn = document.querySelector('.americas-btn')
+let europeBtn = document.querySelector('.europe-btn')
+let oceaniaBtn = document.querySelector('.oceania-btn')
+let recoveredBtn = document.querySelector('.recovered-btn')
+let deathsBtn = document.querySelector('.deaths-btn')
+let confirmedBtn = document.querySelector('.confirmed-btn')
+let criticalBtn = document.querySelector('.critical-btn')
+
+criticalBtn.addEventListener('click', (e) => {
+
+    activate(asia, 'asia', critical)
+})
+confirmedBtn.addEventListener('click', (e) => {
+
+    activate(asia, 'asia', confirmed)
+})
+deathsBtn.addEventListener('click', (e) => {
+
+    activate(asia, 'asia', deaths)
+})
+recoveredBtn.addEventListener('click', (e) => {
+
+    activate(asia, 'asia', recovered)
+})
